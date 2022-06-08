@@ -4,10 +4,18 @@ import strings
 
 const rows = 40
 const cols = 140
+const alive = `*`
+const dead = ` `
 
 type Board = []bool
 
-fn create_board(rows int, cols int) Board {
+struct Game {
+mut:
+	board Board = create_board_random()
+	board_alt Board = create_board()
+}
+
+fn create_board() Board {
 	return Board([]bool{len: (rows + 2) * (cols + 2), init: false})
 }
 
@@ -16,16 +24,29 @@ fn idx(i int, j int) int {
 }
 
 [direct_array_access]
-fn print_board(b Board, pb Board) {
-	mut s := strings.new_builder(rows * cols)
+fn create_board_random() Board {
+	mut board := create_board()
 	for i in 0 .. rows {
 		for j in 0 .. cols {
-			if b[idx(i, j)] != pb[idx(i, j)] {
+			board[idx(i, j)] = rand.f32() < 0.5
+		}
+	}
+	return board
+}
+
+[direct_array_access]
+fn (g Game) print_board() {
+	mut s := strings.new_builder(rows * cols)
+	mut index := 0
+	for i in 0 .. rows {
+		for j in 0 .. cols {
+			index = idx(i, j)
+			if g.board[index] != g.board_alt[index] {
 				s.write_string("\x1b[${i + 1};${j + 1}H")
-				if b[idx(i, j)] {
-					s.write_rune(`*`)
+				if g.board[index] {
+					s.write_rune(alive)
 				} else {
-					s.write_rune(` `)
+					s.write_rune(dead)
 				}
 			}
 		}
@@ -34,38 +55,28 @@ fn print_board(b Board, pb Board) {
 }
 
 [direct_array_access]
-fn randomize_board(mut b Board) Board {
-	for i in 0 .. rows {
-		for j in 0 .. cols {
-			b[idx(i, j)] = rand.f32() < 0.5
-		}
-	}
-	return b
-}
-
-[direct_array_access]
-fn count_neighbors(b Board, i int, j int) int {
+fn (g Game) count_neighbors(i int, j int) int {
 	return
-	int(b[idx(i - 1, j - 1)]) +
-	int(b[idx(i - 1, j)]) +
-	int(b[idx(i - 1, j + 1)]) +
-	int(b[idx(i, j - 1)]) +
-	int(b[idx(i, j + 1)]) +
-	int(b[idx(i + 1, j - 1)]) +
-	int(b[idx(i + 1, j)]) +
-	int(b[idx(i + 1, j + 1)])
+	int(g.board[idx(i - 1, j - 1)]) +
+	int(g.board[idx(i - 1, j)]) +
+	int(g.board[idx(i - 1, j + 1)]) +
+	int(g.board[idx(i, j - 1)]) +
+	int(g.board[idx(i, j + 1)]) +
+	int(g.board[idx(i + 1, j - 1)]) +
+	int(g.board[idx(i + 1, j)]) +
+	int(g.board[idx(i + 1, j + 1)])
 }
 
 [direct_array_access]
-fn tick(b Board, mut nb Board) Board {
+fn (mut g Game) tick() {
 	mut nc := 0
 	for i in 0 .. rows {
 		for j in 0 .. cols {
-			nc = count_neighbors(b, i, j)
-			nb[idx(i, j)] = (b[idx(i, j)] && nc == 2) || (nc == 3)
+			nc = g.count_neighbors(i, j)
+			g.board_alt[idx(i, j)] = (g.board[idx(i, j)] && nc == 2) || (nc == 3)
 		}
 	}
-	return nb
+	g.board, g.board_alt = g.board_alt, g.board
 }
 
 fn clear_screen() { print("\x1b[2J") }
@@ -95,13 +106,10 @@ fn prep_term() {
 fn main(){
 	os.signal_opt(os.Signal.int, cleanup_term)?
 	prep_term()
-	mut board := create_board(rows, cols)
-	board = randomize_board(mut board)
-	mut next_board := create_board(rows, cols)
+	mut game := Game{}
 	for _ in 1 .. 10000 {
-		tick(board, mut next_board)
-		board, next_board = next_board, board
-		print_board(board, next_board)
+		game.tick()
+		game.print_board()
 	}
 	cleanup_term(os.Signal.int)
 }
