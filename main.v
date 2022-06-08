@@ -21,12 +21,12 @@ fn print_board(b Board) {
 	for i in 0 .. rows {
 		for j in 0 .. cols {
 			if b[idx(i, j)] {
-				s.write_string("*")
+				s.write_rune(`*`)
 			} else {
-				s.write_string(" ")
+				s.write_rune(` `)
 			}
 		}
-		s.write_string("\n")
+		s.write_rune(`\n`)
 	}
 	print(s)
 }
