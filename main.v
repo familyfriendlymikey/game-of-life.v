@@ -1,6 +1,5 @@
 import rand
 import os
-import strings
 
 const rows = 40
 const cols = 140
@@ -17,18 +16,19 @@ fn idx(i int, j int) int {
 
 [direct_array_access]
 fn print_board(b Board) {
-	mut s := strings.new_builder((rows + 2) * (cols + 2))
+	mut buf := []u8{ len: rows * (cols + 1), init: ` ` }
 	for i in 0 .. rows {
 		for j in 0 .. cols {
 			if b[idx(i, j)] {
-				s.write_rune(`*`)
+				buf[idx(i, j)] = `*`
 			} else {
-				s.write_rune(` `)
+				buf[idx(i, j)] = ` `
 			}
 		}
-		s.write_rune(`\n`)
+		buf[idx(i, cols)] = `\n`
 	}
-	print(s)
+	place_cursor()
+	C.write(1, buf.data, buf.len)
 }
 
 [direct_array_access]
@@ -96,7 +96,6 @@ fn main(){
 	prep_term()
 	for _ in 1 .. 10000 {
 		board = tick(board)
-		place_cursor()
 		print_board(board)
 	}
 	cleanup_term(os.Signal.int)
