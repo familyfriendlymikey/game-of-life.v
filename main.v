@@ -15,8 +15,7 @@ fn idx(i int, j int) int {
 }
 
 [direct_array_access]
-fn print_board(b Board) {
-	mut buf := []u8{ len: rows * (cols + 1), init: ` ` }
+fn print_board(b Board, mut buf []u8) {
 	for i in 0 .. rows {
 		for j in 0 .. cols {
 			if b[idx(i, j)] {
@@ -55,16 +54,15 @@ fn count_neighbors(b Board, i int, j int) int {
 }
 
 [direct_array_access]
-fn tick(b Board) Board {
-	mut next_board := create_board(rows, cols)
+fn tick(b Board, mut nb Board) Board {
 	mut nc := 0
 	for i in 0 .. rows {
 		for j in 0 .. cols {
 			nc = count_neighbors(b, i, j)
-			next_board[idx(i, j)] = (b[idx(i, j)] && nc == 2) || (nc == 3)
+			nb[idx(i, j)] = (b[idx(i, j)] && nc == 2) || (nc == 3)
 		}
 	}
-	return next_board
+	return nb
 }
 
 fn clear_screen() { print("\x1b[2J") }
@@ -92,11 +90,14 @@ fn prep_term() {
 fn main(){
 	os.signal_opt(os.Signal.int, cleanup_term)?
 	mut board := create_board(rows, cols)
+	mut next_board := create_board(rows, cols)
 	board = randomize_board(mut board)
 	prep_term()
+	mut buf := []u8{ len: rows * (cols + 1), init: ` ` }
 	for _ in 1 .. 10000 {
-		board = tick(board)
-		print_board(board)
+		tick(board, mut next_board)
+		board, next_board = next_board, board
+		print_board(board, mut buf)
 	}
 	cleanup_term(os.Signal.int)
 }
