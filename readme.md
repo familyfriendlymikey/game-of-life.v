@@ -9,3 +9,4 @@ Padded 1D Array + []u8 | 85ms | 922ms
 Padded 1D Array + []u8 + Preallocate 2 Arrays | 44ms | 899ms
 Unpadded 1D Array + []u8 + Preallocate 2 Arrays | 100ms+ | untested
 Padded 1D Array + strings.Builder + virtual buffer | 273ms | 356ms
+Padded 1D Array + []u8 append + virtual buffer | 246ms | 348ms

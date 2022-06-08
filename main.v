@@ -1,6 +1,5 @@
 import rand
 import os
-import strings
 
 const rows = 40
 const cols = 140
@@ -16,21 +15,23 @@ fn idx(i int, j int) int {
 }
 
 [direct_array_access]
-fn print_board(b Board, pb Board) {
-	mut s := strings.new_builder(0)
+fn print_board(b Board, pb Board, mut buf []u8) {
+	mut s := ""
+	buf.clear()
 	for i in 0 .. rows {
 		for j in 0 .. cols {
 			if b[idx(i, j)] != pb[idx(i, j)] {
-				s.write_string("\x1b[${i + 1};${j + 1}H")
+				s = "\x1b[${i + 1};${j + 1}H"
+				unsafe { buf.push_many(s.str, s.len) }
 				if b[idx(i, j)] {
-					s.write_string("*")
+					buf << `*`
 				} else {
-					s.write_string(" ")
+					buf << ` `
 				}
 			}
 		}
 	}
-	print(s)
+	C.write(1, buf.data, buf.len)
 }
 
 [direct_array_access]
@@ -96,10 +97,11 @@ fn main(){
 	mut next_board := create_board(rows, cols)
 	board = randomize_board(mut board)
 	prep_term()
+	mut buf := []u8{}
 	for _ in 1 .. 10000 {
 		tick(board, mut next_board)
 		board, next_board = next_board, board
-		print_board(board, next_board)
+		print_board(board, next_board, mut buf)
 	}
 	cleanup_term(os.Signal.int)
 }
