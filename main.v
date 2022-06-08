@@ -1,5 +1,6 @@
 import rand
 import os
+import strings
 
 const rows = 40
 const cols = 140
@@ -15,23 +16,21 @@ fn idx(i int, j int) int {
 }
 
 [direct_array_access]
-fn print_board(b Board, pb Board, mut buf []u8) {
-	mut s := ""
-	buf.clear()
+fn print_board(b Board, pb Board) {
+	mut s := strings.new_builder(rows * cols)
 	for i in 0 .. rows {
 		for j in 0 .. cols {
 			if b[idx(i, j)] != pb[idx(i, j)] {
-				s = "\x1b[${i + 1};${j + 1}H"
-				unsafe { buf.push_many(s.str, s.len) }
+				s.write_string("\x1b[${i + 1};${j + 1}H")
 				if b[idx(i, j)] {
-					buf << `*`
+					s.write_rune(`*`)
 				} else {
-					buf << ` `
+					s.write_rune(` `)
 				}
 			}
 		}
 	}
-	C.write(1, buf.data, buf.len)
+	C.write(1, s.data, s.len)
 }
 
 [direct_array_access]
@@ -74,34 +73,35 @@ fn hide_cursor() { print("\x1b[?25l") }
 fn show_cursor() { print("\x1b[?25h") }
 fn smcup() { print("\x1b[?1049h") }
 fn rmcup() { print("\x1b[?1049l") }
-fn place_cursor_top_left() { print("\x1b[1;1H") }
+fn place_cursor() { print("\x1b[1;1H") }
 
-fn cleanup_term(lol os.Signal) {
-	place_cursor_top_left()
+fn cleanup_term(_ os.Signal) {
+	place_cursor()
 	clear_screen()
 	rmcup()
 	show_cursor()
+	flush_stdout()
 	exit(0)
 }
 
 fn prep_term() {
 	smcup()
-	place_cursor_top_left()
+	place_cursor()
 	clear_screen()
 	hide_cursor()
+	flush_stdout()
 }
 
 fn main(){
 	os.signal_opt(os.Signal.int, cleanup_term)?
-	mut board := create_board(rows, cols)
-	mut next_board := create_board(rows, cols)
-	board = randomize_board(mut board)
 	prep_term()
-	mut buf := []u8{}
+	mut board := create_board(rows, cols)
+	board = randomize_board(mut board)
+	mut next_board := create_board(rows, cols)
 	for _ in 1 .. 10000 {
 		tick(board, mut next_board)
 		board, next_board = next_board, board
-		print_board(board, next_board, mut buf)
+		print_board(board, next_board)
 	}
 	cleanup_term(os.Signal.int)
 }
