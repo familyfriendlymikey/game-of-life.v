@@ -5,16 +5,22 @@ import strings
 const rows = 40
 const cols = 140
 
-fn create_board(rows int, cols int) [][]bool {
-	return [][]bool{len: rows + 2, init: []bool{len: cols + 2, init: false}}
+type Board = []bool
+
+fn create_board(rows int, cols int) Board {
+	return Board([]bool{len: (rows + 2) * (cols + 2), init: false})
+}
+
+fn idx(i int, j int) int {
+	return (i + 1) * (cols + 2) + (j + 1)
 }
 
 [direct_array_access]
-fn print_board(board [][]bool) {
+fn print_board(b Board) {
 	mut s := strings.new_builder((rows + 2) * (cols + 2))
-	for row in board {
-		for cell in row {
-			if cell {
+	for i in 0 .. rows {
+		for j in 0 .. cols {
+			if b[idx(i, j)] {
 				s.write_string("*")
 			} else {
 				s.write_string(" ")
@@ -26,36 +32,36 @@ fn print_board(board [][]bool) {
 }
 
 [direct_array_access]
-fn randomize_board(mut board [][]bool) [][]bool {
-	for i in 1 .. rows + 1 {
-		for j in 1 .. cols + 1 {
-			board[i][j] = rand.f32() < 0.5
+fn randomize_board(mut b Board) Board {
+	for i in 0 .. rows {
+		for j in 0 .. cols {
+			b[idx(i, j)] = rand.f32() < 0.5
 		}
 	}
-	return board
+	return b
 }
 
 [direct_array_access]
-fn count_neighbors(board [][]bool, i int, j int) int {
+fn count_neighbors(b Board, i int, j int) int {
 	return
-	int(board[i - 1][j - 1]) +
-	int(board[i - 1][j]) +
-	int(board[i - 1][j + 1]) +
-	int(board[i][j - 1]) +
-	int(board[i][j + 1]) +
-	int(board[i + 1][j - 1]) +
-	int(board[i + 1][j]) +
-	int(board[i + 1][j + 1])
+	int(b[idx(i - 1, j - 1)]) +
+	int(b[idx(i - 1, j)]) +
+	int(b[idx(i - 1, j + 1)]) +
+	int(b[idx(i, j - 1)]) +
+	int(b[idx(i, j + 1)]) +
+	int(b[idx(i + 1, j - 1)]) +
+	int(b[idx(i + 1, j)]) +
+	int(b[idx(i + 1, j + 1)])
 }
 
 [direct_array_access]
-fn tick(board [][]bool) [][]bool {
+fn tick(b Board) Board {
 	mut next_board := create_board(rows, cols)
 	mut nc := 0
-	for i in 1 .. rows + 1 {
-		for j in 1 .. cols + 1 {
-			nc = count_neighbors(board, i, j)
-			next_board[i][j] = (board[i][j] && nc == 2) || (nc == 3)
+	for i in 0 .. rows {
+		for j in 0 .. cols {
+			nc = count_neighbors(b, i, j)
+			next_board[idx(i, j)] = (b[idx(i, j)] && nc == 2) || (nc == 3)
 		}
 	}
 	return next_board
