@@ -1,5 +1,6 @@
 import rand
 import os
+import strings
 
 const rows = 40
 const cols = 140
@@ -7,27 +8,29 @@ const cols = 140
 type Board = []bool
 
 fn create_board(rows int, cols int) Board {
-	return Board([]bool{len: rows * cols, init: false})
+	return Board([]bool{len: (rows + 2) * (cols + 2), init: false})
 }
 
 fn idx(i int, j int) int {
-	return i * cols + j
+	return (i + 1) * (cols + 2) + (j + 1)
 }
 
 [direct_array_access]
-fn print_board(b Board, mut buf []u8) {
+fn print_board(b Board, pb Board) {
+	mut s := strings.new_builder(0)
 	for i in 0 .. rows {
 		for j in 0 .. cols {
-			if b[idx(i, j)] {
-				buf[idx(i, j)] = `*`
-			} else {
-				buf[idx(i, j)] = ` `
+			if b[idx(i, j)] != pb[idx(i, j)] {
+				s.write_string("\x1b[${i + 1};${j + 1}H")
+				if b[idx(i, j)] {
+					s.write_string("*")
+				} else {
+					s.write_string(" ")
+				}
 			}
 		}
-		buf[idx(i, cols)] = `\n`
 	}
-	place_cursor()
-	C.write(1, buf.data, buf.len)
+	print(s)
 }
 
 [direct_array_access]
@@ -42,36 +45,15 @@ fn randomize_board(mut b Board) Board {
 
 [direct_array_access]
 fn count_neighbors(b Board, i int, j int) int {
-	if i >= 1 && j >= 1 {
-		return
-			int(b[idx(i - 1, j - 1)]) +
-			int(b[idx(i - 1, j)]) +
-			int(b[idx(i - 1, j + 1)]) +
-			int(b[idx(i, j - 1)]) +
-			int(b[idx(i, j + 1)]) +
-			int(b[idx(i + 1, j - 1)]) +
-			int(b[idx(i + 1, j)]) +
-			int(b[idx(i + 1, j + 1)])
-	} else if i >= 1 {
-		return
-			int(b[idx(i - 1, j)]) +
-			int(b[idx(i - 1, j + 1)]) +
-			int(b[idx(i, j + 1)]) +
-			int(b[idx(i + 1, j)]) +
-			int(b[idx(i + 1, j + 1)])
-	} else if j >= 1 {
-		return
-			int(b[idx(i, j - 1)]) +
-			int(b[idx(i, j + 1)]) +
-			int(b[idx(i + 1, j - 1)]) +
-			int(b[idx(i + 1, j)]) +
-			int(b[idx(i + 1, j + 1)])
-	} else {
-		return
-			int(b[idx(i, j + 1)]) +
-			int(b[idx(i + 1, j)]) +
-			int(b[idx(i + 1, j + 1)])
-	}
+	return
+	int(b[idx(i - 1, j - 1)]) +
+	int(b[idx(i - 1, j)]) +
+	int(b[idx(i - 1, j + 1)]) +
+	int(b[idx(i, j - 1)]) +
+	int(b[idx(i, j + 1)]) +
+	int(b[idx(i + 1, j - 1)]) +
+	int(b[idx(i + 1, j)]) +
+	int(b[idx(i + 1, j + 1)])
 }
 
 [direct_array_access]
@@ -91,10 +73,10 @@ fn hide_cursor() { print("\x1b[?25l") }
 fn show_cursor() { print("\x1b[?25h") }
 fn smcup() { print("\x1b[?1049h") }
 fn rmcup() { print("\x1b[?1049l") }
-fn place_cursor() { print("\x1b[1;1H") }
+fn place_cursor_top_left() { print("\x1b[1;1H") }
 
 fn cleanup_term(lol os.Signal) {
-	place_cursor()
+	place_cursor_top_left()
 	clear_screen()
 	rmcup()
 	show_cursor()
@@ -103,7 +85,7 @@ fn cleanup_term(lol os.Signal) {
 
 fn prep_term() {
 	smcup()
-	place_cursor()
+	place_cursor_top_left()
 	clear_screen()
 	hide_cursor()
 }
@@ -114,11 +96,10 @@ fn main(){
 	mut next_board := create_board(rows, cols)
 	board = randomize_board(mut board)
 	prep_term()
-	// mut buf := []u8{ len: rows * (cols + 1), init: ` ` }
 	for _ in 1 .. 10000 {
 		tick(board, mut next_board)
 		board, next_board = next_board, board
-		// print_board(board, mut buf)
+		print_board(board, next_board)
 	}
 	cleanup_term(os.Signal.int)
 }
