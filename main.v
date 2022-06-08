@@ -7,11 +7,11 @@ const cols = 140
 type Board = []bool
 
 fn create_board(rows int, cols int) Board {
-	return Board([]bool{len: (rows + 2) * (cols + 2), init: false})
+	return Board([]bool{len: rows * cols, init: false})
 }
 
 fn idx(i int, j int) int {
-	return (i + 1) * (cols + 2) + (j + 1)
+	return i * cols + j
 }
 
 [direct_array_access]
@@ -42,15 +42,36 @@ fn randomize_board(mut b Board) Board {
 
 [direct_array_access]
 fn count_neighbors(b Board, i int, j int) int {
-	return
-	int(b[idx(i - 1, j - 1)]) +
-	int(b[idx(i - 1, j)]) +
-	int(b[idx(i - 1, j + 1)]) +
-	int(b[idx(i, j - 1)]) +
-	int(b[idx(i, j + 1)]) +
-	int(b[idx(i + 1, j - 1)]) +
-	int(b[idx(i + 1, j)]) +
-	int(b[idx(i + 1, j + 1)])
+	if i >= 1 && j >= 1 {
+		return
+			int(b[idx(i - 1, j - 1)]) +
+			int(b[idx(i - 1, j)]) +
+			int(b[idx(i - 1, j + 1)]) +
+			int(b[idx(i, j - 1)]) +
+			int(b[idx(i, j + 1)]) +
+			int(b[idx(i + 1, j - 1)]) +
+			int(b[idx(i + 1, j)]) +
+			int(b[idx(i + 1, j + 1)])
+	} else if i >= 1 {
+		return
+			int(b[idx(i - 1, j)]) +
+			int(b[idx(i - 1, j + 1)]) +
+			int(b[idx(i, j + 1)]) +
+			int(b[idx(i + 1, j)]) +
+			int(b[idx(i + 1, j + 1)])
+	} else if j >= 1 {
+		return
+			int(b[idx(i, j - 1)]) +
+			int(b[idx(i, j + 1)]) +
+			int(b[idx(i + 1, j - 1)]) +
+			int(b[idx(i + 1, j)]) +
+			int(b[idx(i + 1, j + 1)])
+	} else {
+		return
+			int(b[idx(i, j + 1)]) +
+			int(b[idx(i + 1, j)]) +
+			int(b[idx(i + 1, j + 1)])
+	}
 }
 
 [direct_array_access]
@@ -93,11 +114,11 @@ fn main(){
 	mut next_board := create_board(rows, cols)
 	board = randomize_board(mut board)
 	prep_term()
-	mut buf := []u8{ len: rows * (cols + 1), init: ` ` }
+	// mut buf := []u8{ len: rows * (cols + 1), init: ` ` }
 	for _ in 1 .. 10000 {
 		tick(board, mut next_board)
 		board, next_board = next_board, board
-		print_board(board, mut buf)
+		// print_board(board, mut buf)
 	}
 	cleanup_term(os.Signal.int)
 }
